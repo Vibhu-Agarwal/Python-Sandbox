@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'm2m_change_triggers',
+    'related_name_in_child_w_inheritance',
 ]
 
 MIDDLEWARE = [
