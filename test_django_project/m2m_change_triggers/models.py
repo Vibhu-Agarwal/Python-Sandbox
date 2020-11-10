@@ -1,6 +1,5 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-
+from django.db import models
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 
@@ -16,9 +15,9 @@ class Project(models.Model):
 @receiver(m2m_changed, sender=Project.admin_users.through)
 def update_users_on_change(instance, action, **kwargs):
     if action == 'post_add':
-        instance.name = f"{instance.name}_changed"  # changes to this field are reflected in DB
-        instance.save()
-        users = instance.users.all()
         for admin in instance.admin_users.all():
-            if not users.filter(pk=admin.id).exists():
+            if not instance.users.filter(pk=admin.id).exists():
                 instance.users.add(admin)
+
+        # instance.users.add(*instance.admin_users.all())
+        # instance.users.set(instance.users.distinct())
