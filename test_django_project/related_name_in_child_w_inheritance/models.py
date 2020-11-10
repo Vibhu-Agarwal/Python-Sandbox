@@ -7,8 +7,9 @@ class Company(models.Model):
 
 class Developer(models.Model):
     skills = models.CharField(max_length=20)
+    # https://devdocs.io/django~3.0/topics/db/models#abstract-related-name
     work = models.ForeignKey(Company, on_delete=models.SET_NULL,
-                             related_name='web_or_mobile_developers',  # How?
+                             related_name='%(class)s',
                              blank=True, null=True)
 
     class Meta:
