@@ -1,9 +1,15 @@
 from django.test import TestCase
-from .models import ProjectRick, ProjectMorty
+from .models import Project
 from django.contrib.auth import get_user_model
-# from django.core.serializers import serialize
+from rest_framework.serializers import ModelSerializer
 
 User = get_user_model()
+
+
+class ProjectSerializer(ModelSerializer):
+    class Meta:
+        model = Project
+        fields = "__all__"
 
 
 class TestProject(TestCase):
@@ -26,24 +32,41 @@ class TestProject(TestCase):
                 'first_name': 'Guido',
                 'phone_number': '+999999999',
                 'password': 'password'
+            },
+            {
+                'username': 'david',
+                'email': 'david@david.in',
+                'first_name': 'David',
+                'phone_number': '+999999999',
+                'password': 'password'
             }
         ]
         self.users = (
             User.objects.create(**users[0]),
             User.objects.create(**users[1]),
+            User.objects.create(**users[2]),
         )
-        self.project_rick = ProjectRick.objects.create(**project_data)
-        self.project_rick.users.add(self.users[0])
-        # print('SET-UP ProjectRick:', serialize('json', ProjectRick.objects.all()))
+        self.project = Project.objects.create(**project_data)
+        self.project.users.add(self.users[0])
 
-        self.project_morty = ProjectMorty.objects.create(**project_data)
-        self.project_morty.users.add(self.users[0])
-        # print('SET-UP ProjectMorty:', serialize('json', ProjectMorty.objects.all()))
+    def test_m2m_signal_on_model_without_passing_changing_field(self):
+        serializer = ProjectSerializer(self.project, data={
+            'admin_users': [self.users[1].id],
+        }, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            assert False
+        self.assertTrue(self.project.users.filter(id=self.users[1].id).exists())
 
-    def test_save_fn_on_model(self):
-        self.project_rick.admin_users.add(self.users[1])
-        self.assertEqual(self.project_rick.users.filter(id=self.users[1].id).exists(), True)
-
-    def test_m2m_signal_on_model(self):
-        self.project_morty.admin_users.add(self.users[1])
-        self.assertEqual(self.project_morty.users.filter(id=self.users[1].id).exists(), True)
+    def test_m2m_signal_on_model_when_passing_changing_field(self):
+        serializer = ProjectSerializer(self.project, data={
+            'admin_users': [self.users[1].id],
+            'users': [self.users[2].id]
+        }, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            assert False
+        self.assertTrue(self.project.users.filter(id=self.users[2].id).exists())
+        self.assertTrue(self.project.users.filter(id=self.users[1].id).exists())
